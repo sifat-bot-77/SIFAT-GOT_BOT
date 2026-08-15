@@ -1,26 +1,61 @@
-const fs = require("fs-extra");
-const path = require("path");
-
 module.exports = {
 	config: {
 		name: "help",
 		aliases: ["menu", "commands"],
-		version: "5.0",
+		version: "5.2",
 		author: "MUKUL",
-		shortDescription: "Show all commands",
-		longDescription: "Display categorized commands",
+		countDown: 3,
+		role: 0,
+		shortDescription: "Show all available commands",
+		longDescription: "Display all commands in categorized format.",
 		category: "system",
-		guide: "{pn}help [command]"
+		guide: "{pn}help [command name]"
 	},
 
-	onStart: async function ({ message, args, prefix }) {
+	onStart: async function ({
+		message,
+		args,
+		prefix,
+		event
+	}) {
+
 		const allCommands = global.GoatBot.commands;
 		const categories = {};
 
-		const cleanCategoryName = (text) => {
-			if (!text) return "others";
+		// ==============================
+		// AUTO DELETE USER COMMAND
+		// 15 SECONDS
+		// ==============================
 
-			return text
+		if (event?.messageID) {
+			setTimeout(() => {
+				try {
+					if (
+						global.GoatBot?.fcaApi &&
+						typeof global.GoatBot.fcaApi.unsendMessage === "function"
+					) {
+						global.GoatBot.fcaApi.unsendMessage(
+							event.messageID
+						);
+					}
+				} catch (error) {
+					console.log(
+						"USER MESSAGE DELETE ERROR:",
+						error.message
+					);
+				}
+			}, 15000);
+		}
+
+		// ==============================
+		// CLEAN CATEGORY
+		// ==============================
+
+		const cleanCategoryName = (text) => {
+			if (!text)
+				return "others";
+
+			return String(text)
 				.normalize("NFKD")
 				.replace(/[^\w\s-]/g, "")
 				.replace(/\s+/g, " ")
@@ -28,23 +63,38 @@ module.exports = {
 				.toLowerCase();
 		};
 
-		// Command Details
+		// ==============================
+		// COMMAND DETAILS
+		// .help command
+		// ==============================
+
 		if (args[0]) {
-			const query = args[0].toLowerCase();
+
+			const query =
+				String(args[0]).toLowerCase();
 
 			const cmd =
 				allCommands.get(query) ||
 				[...allCommands.values()].find(
 					(c) =>
 						(c.config.aliases || [])
-							.map((a) => a.toLowerCase())
+							.map((a) =>
+								String(a).toLowerCase()
+							)
 							.includes(query)
 				);
 
-			if (!cmd)
-				return message.reply(
-					`❌ Command "${query}" not found`
-				);
+			if (!cmd) {
+
+				const sent =
+					await message.reply(
+						`❌ Command "${query}" not found.`
+					);
+
+				autoDeleteReply(sent);
+
+				return;
+			}
 
 			const {
 				name,
@@ -57,7 +107,7 @@ module.exports = {
 				aliases
 			} = cmd.config;
 
-			const desc =
+			const description =
 				typeof longDescription === "string"
 					? longDescription
 					: longDescription?.en ||
@@ -67,72 +117,198 @@ module.exports = {
 
 			const usage =
 				typeof guide === "string"
-					? guide.replace(/{pn}/g, prefix)
-					: guide?.en?.replace(/{pn}/g, prefix) ||
+					? guide.replace(
+						/{pn}/g,
+						prefix
+					)
+					: guide?.en
+						?.replace(
+							/{pn}/g,
+							prefix
+						) ||
 					  `${prefix}${name}`;
 
-			const requiredRole =
+			const role =
 				cmd.config.role !== undefined
 					? cmd.config.role
 					: 0;
 
-			return message.reply(
+			const permission =
+				role === 0
+					? "Everyone"
+					: role === 1
+						? "Group Admin"
+						: "Bot Admin";
+
+			const msg =
 `👑 𝗠𝗨𝗞𝗨𝗟 𝗚𝗢𝗔𝗧 𝗕𝗢𝗧 👑
 
-☠️ COMMAND INFO ☠️
+『 COMMAND INFO 』
 
-➥ Name: ${name}
-➥ Category: ${category || "Others"}
-➥ Description: ${desc}
-➥ Aliases: ${aliases?.join(", ") || "None"}
-➥ Usage: ${usage}
-➥ Permission: ${requiredRole}
-➥ Author: ${author || "MUKUL"}
-➥ Version: ${version || "1.0"}`
-			);
+* Name: ${name}
+* Category: ${category || "others"}
+* Description: ${description}
+* Aliases: ${
+	aliases?.length
+		? aliases.join(", ")
+		: "None"
+}
+* Usage: ${usage}
+* Permission: ${permission}
+* Author: ${author || "MUKUL"}
+* Version: ${version || "1.0"}
+
+━━━━━━━━━━━━━━━━━━
+👑 MUKUL GOAT BOT
+━━━━━━━━━━━━━━━━━━`;
+
+			const sent =
+				await message.reply(msg);
+
+			autoDeleteReply(sent);
+
+			return;
 		}
 
-		// Category Sort
+		// ==============================
+		// CREATE CATEGORY LIST
+		// ==============================
+
 		for (const [name, cmd] of allCommands) {
-			const cat = cleanCategoryName(
-				cmd.config.category
-			);
 
-			if (!categories[cat])
-				categories[cat] = [];
+			if (!cmd || !cmd.config)
+				continue;
 
-			categories[cat].push(
-				cmd.config.name
-			);
+			const category =
+				cleanCategoryName(
+					cmd.config.category
+				);
+
+			if (!categories[category]) {
+				categories[category] = [];
+			}
+
+			if (
+				cmd.config.name &&
+				!categories[category].includes(
+					cmd.config.name
+				)
+			) {
+				categories[category].push(
+					cmd.config.name
+				);
+			}
 		}
+
+		// ==============================
+		// SORT CATEGORIES
+		// ==============================
 
 		const sortedCategories =
 			Object.keys(categories).sort();
+
+		// ==============================
+		// HEADER
+		// ==============================
 
 		let msg =
 `👑 𝗠𝗨𝗞𝗨𝗟 𝗚𝗢𝗔𝗧 𝗕𝗢𝗧 👑
 
 `;
 
-		for (const cat of sortedCategories) {
-			msg += `『 ${cat.toUpperCase()} 』\n`;
+		// ==============================
+		// COMMAND LIST
+		// ==============================
 
-			const cmds = categories[cat]
-				.sort()
-				.map((cmd) => `* ${cmd}`)
-				.join("\n");
+		for (const category of sortedCategories) {
 
-			msg += `${cmds}\n\n`;
+			msg +=
+				`『 ${category.toUpperCase()} 』\n`;
+
+			const commands =
+				categories[category].sort(
+					(a, b) =>
+						a.localeCompare(b)
+				);
+
+			for (const command of commands) {
+				msg += `* ${command}\n`;
+			}
+
+			msg += "\n";
 		}
+
+		// ==============================
+		// FOOTER
+		// ==============================
 
 		msg +=
 `━━━━━━━━━━━━━━━━━━
-📌 Total Commands: ${allCommands.size}
+📊 Total Commands: ${allCommands.size}
 
 ➥ ${prefix}help [command]
-➥ MUKUL GOAT BOT
+➥ ${prefix}help joke
+
+👑 MUKUL GOAT BOT
 ━━━━━━━━━━━━━━━━━━`;
 
-		return message.reply(msg);
+		// ==============================
+		// SEND HELP
+		// ==============================
+
+		const sent =
+			await message.reply(msg);
+
+		// ==============================
+		// BOT REPLY AUTO UNSEND
+		// 15 SECONDS
+		// ==============================
+
+		autoDeleteReply(sent);
 	}
 };
+
+
+// ======================================
+// AUTO DELETE BOT MESSAGE
+// 15 SECONDS
+// ======================================
+
+function autoDeleteReply(sent) {
+
+	if (!sent)
+		return;
+
+	const messageID =
+		sent.messageID ||
+		sent.id;
+
+	if (!messageID)
+		return;
+
+	setTimeout(() => {
+
+		try {
+
+			if (
+				global.GoatBot?.fcaApi &&
+				typeof global.GoatBot.fcaApi.unsendMessage === "function"
+			) {
+
+				global.GoatBot.fcaApi.unsendMessage(
+					messageID
+				);
+
+			}
+
+		} catch (error) {
+
+			console.log(
+				"BOT MESSAGE UNSEND ERROR:",
+				error.message
+			);
+
+		}
+
+	}, 15000);
+						}
