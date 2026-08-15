@@ -141,7 +141,7 @@ module.exports = {
 						: "Bot Admin";
 
 			const msg =
-`👑 𝗠𝗨𝗞𝗨𝗟 𝗚𝗢𝗔𝗧 𝗕𝗢𝗧 👑
+`👑 SIFAT GOAT BOT 👑
 
 『 COMMAND INFO 』
 
@@ -159,7 +159,7 @@ module.exports = {
 * Version: ${version || "1.0"}
 
 ━━━━━━━━━━━━━━━━━━
-👑 MUKUL GOAT BOT
+👑 SIFAT GOAT BOT
 ━━━━━━━━━━━━━━━━━━`;
 
 			const sent =
@@ -212,7 +212,7 @@ module.exports = {
 		// ==============================
 
 		let msg =
-`👑 𝗠𝗨𝗞𝗨𝗟 𝗚𝗢𝗔𝗧 𝗕𝗢𝗧 👑
+`👑 SIFAT GOAT BOT 👑
 
 `;
 
@@ -249,7 +249,7 @@ module.exports = {
 ➥ ${prefix}help [command]
 ➥ ${prefix}help joke
 
-👑 MUKUL GOAT BOT
+👑 SIFAT GOAT BOT
 ━━━━━━━━━━━━━━━━━━`;
 
 		// ==============================
