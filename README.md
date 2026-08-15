@@ -1,77 +1,8 @@
-<div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d0d0d,50:1a1a2e,100:16213e&height=180&section=header&text=MOSTAKIM%20GOAT%20BOT%20V2&fontSize=65&fontColor=00FFFF&animation=fadeIn&fontAlignY=38&desc=🤖%20Facebook%20Messenger%20Bot%20🤖&descSize=18&descAlignY=60&descColor=FFD700" width="100%"/>
-</div>
-
-<h1 align="center"><img src="./dashboard/images/logo-non-bg.png" width="22px"> 𝐌𝐎𝐒𝐓𝐀𝐊𝐈𝐌 𝐆𝐎𝐀𝐓 𝐁𝐎𝐓 𝐕𝟐</h1>
-  
-❖ **`A Messenger Multi Device Bot To Take Your Messenger To Another Level!`**   
-
-
-
 <p align="center">
-	<a href="https://nodejs.org/dist/v20.20.0">
-		<img src="https://img.shields.io/badge/Nodejs%20Support-20.x-brightgreen.svg?style=flat-square" alt="Nodejs Support v20.x">
-	</a>
-  <img alt="size" src="https://img.shields.io/github/repo-size/mostakim-sagor/MOSTAKIM-GOAT-BOT-V2.svg?style=flat-square&label=size">
-  <img alt="code-version" src="https://img.shields.io/badge/dynamic/json?color=brightgreen&label=code%20version&prefix=v&query=%24.version&url=https://github.com/mostakim-sagor/MOSTAKIM-GOAT-BOT-V2/raw/main/package.json&style=flat-square">
-  <img alt="visitors" src="https://visitor-badge.laobi.icu/badge?style=flat-square&page_id=mostakim-sagor.MOSTAKIM-GOAT-BOT-V2">
-  <img alt="size" src="https://img.shields.io/badge/license-MIT-green?style=flat-square&color=brightgreen">
+  <img src="https://i.imgur.com/w6ZA3hR.jpeg" https="400">
 </p>
 
-<div style="display:inline-block; padding:3px; border-radius:12px; background: linear-gradient(45deg, #ff00cc, #3333ff);">
-  <img src="https://i.imgur.com/mycLJfy.png" alt="banner" style="display:block; border-radius:10px;">
-</div>
-
-
-<!-- Typing Animation -->
-<p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=JetBrains+Mono&size=22&duration=3000&pause=1000&color=00A8FF&center=true&vCenter=true&width=500&lines=Assalamualaikum+Everyone!;Welcome+To+MOSTAKIM+GOAT+BOT+V2" />
-</p>
-
-<hr>
-
-
-<p align="center">
-  <a href="https://mostakim-bot-95kv.onrender.com" target="_blank">
-    <img src="https://img.shields.io/badge/🌐%20Visit%20Website-Online%20Now-00C853?style=for-the-badge" />
-  </a>
-</p>
-
-<p align="center">
-
-
-
-<!-- ⭐ Stars -->
-<img src="https://img.shields.io/github/stars/mostakim-sagor/MOSTAKIM-GOAT-BOT?style=for-the-badge&color=yellow&label=Stars" />
-
-<!-- Watchers -->
-<img src="https://img.shields.io/github/watchers/mostakim-sagor/MOSTAKIM-GOAT-BOT-V2?style=for-the-badge&color=green&label=Watchers" />
-
-<!-- ❗ Issues -->
-<img src="https://img.shields.io/github/issues/mostakim-sagor/MOSTAKIM-GOAT-BOT-V2?style=for-the-badge&color=red&label=Issues" />
-
-<!-- Last Commit -->
-<img src="https://img.shields.io/github/last-commit/mostakim-sagor/MOSTAKIM-GOAT-BOT-V2?style=for-the-badge&color=black&label=Last%20Commit" />
-
-  <!-- ⭐ Fork Views -->
-  <img src="https://komarev.com/ghpvc/?username=mostakim-sagor&label=Fork%20Views&color=blueviolet&style=for-the-badge" alt="Fork Views">
-
-<!-- 🍴 Forks -->
-<img src="https://img.shields.io/github/forks/mostakim-sagor/MOSTAKIM-GOAT-BOT-V2?style=for-the-badge&color=blue&label=Forks" />
-
-  <!-- ⭐ Fork Button -->
-  <a href="https://github.com/mostakim-sagor/MOSTAKIM-GOAT-BOT-V2/fork">
-    <img src="https://img.shields.io/badge/FORK%20REPOSITORY-blue?style=for-the-badge&logo=github&logoColor=white" alt="Fork Repo">
-  </a>
-
-  <!-- ⭐ Import Button -->
-  <a href="https://github.com/new/import?source=https://github.com/mostakim-sagor/MOSTAKIM-GOAT-BOT-V2">
-    <img src="https://img.shields.io/badge/IMPORT%20REPOSITORY-black?style=for-the-badge&logo=github&logoColor=white" alt="Import Repo">
-  </a>
-
-</p>
-
-
+👑 🅧🅜🅤🅚🅤🅛🅑🅞🅣 👑
 
 ## Steps to Run the Bot
 
@@ -127,7 +58,7 @@ node index.js
 
 ## 👨‍💻 ABOUT THE DEVELOPER
 
-**Name:** `MOSTAKIM ISlAM SAGOR`  
+**Name:** `MD MUKUL MIA`  
 **Profession:** `STUDENT & CHATBOT DEVELOPER`  
 **Location:** `DHAKA, BANGLADESH`
 
@@ -239,25 +170,7 @@ node index.js
 - Do not monetize my source code (such as: buy and sell commands, buy and sell bots, call for donations, etc.)
 - Don't remove/edit my credits (author name) in my source code
 
-💖 **Thank You For Choosing • 𝐌𝐎𝐒𝐓𝐀𝐊𝐈𝐌 𝐆𝐎𝐀𝐓 𝐁𝐎𝐓 𝐕𝟐!**  
+💖 **Thank You For Choosing • 
+👑 🅢🅚 🅜🅤🅚🅤🅛  𝐆𝐎𝐀𝐓 𝐁𝐎𝐓 𝐕𝟐👑!**  
 🗓️ *Release Date:* `05/01/2026 at 12:00`  
 ⭐ **Please don't forget to give a star after forking! It really helps!**
-
-#### 📞 CONTACT
-
-<p align="center">
-  <a href="https://github.com/mostakim-sagor"><img src="https://img.icons8.com/fluency/48/000000/github.png" alt="GitHub"></a>
-  <a href="https://wa.me/+8801888000000"><img src="https://img.icons8.com/color/48/000000/whatsapp.png" alt="WhatsApp"></a>
-  <a href="https://www.facebook.com/MOSTAKIM.LABS"><img src="https://img.icons8.com/fluency/48/000000/facebook.png" alt="Facebook"></a>
-  <a href="https://t.me/M0STAKIM10X"><img src="https://img.icons8.com/color/48/000000/telegram-app.png" alt="Telegram"></a>
-  <a href="https://youtube.com/@MOSTAKIM-LABS"><img src="https://img.icons8.com/color/48/000000/youtube-play.png" alt="YouTube"></a>
-</p>
-
-
-**𝐈 𝐡𝐨𝐩𝐞 𝐲𝐨𝐮 𝐞𝐧𝐣𝐨𝐲 𝐦𝐲 𝐟𝐨𝐫𝐤! 𝐓𝐡𝐚𝐧𝐤 𝐲𝐨𝐮 𝐟𝐨𝐫 𝐬𝐮𝐩𝐩𝐨𝐫𝐭𝐢𝐧𝐠!**
-
-
-
-<div align="center">
-
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:16213e,50:1a1a2e,100:0d0d0d&height=120&section=footer&animation=fadeIn" width="100%"/>
