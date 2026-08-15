@@ -1,0 +1,67 @@
+const axios = require("axios");
+
+module.exports = {
+	config: {
+		name: "location",
+		aliases: ["loc", "map"],
+		version: "1.0",
+		author: "Mukul",
+		countDown: 5,
+		role: 0,
+		shortDescription: "Show shared location",
+		longDescription: "Display a voluntarily shared Google Maps location.",
+		category: "utility",
+		guide: "{pn} <Google Maps link>"
+	},
+
+	onStart: async function ({ message, args }) {
+		const link = args[0];
+
+		if (!link) {
+			return message.reply(
+				"📍 Location link দাও!\n\n" +
+				"Example:\n" +
+				".location https://maps.google.com/..."
+			);
+		}
+
+		// শুধু Google Maps link গ্রহণ করবে
+		if (
+			!link.includes("google.com/maps") &&
+			!link.includes("maps.google.com") &&
+			!link.includes("goo.gl/maps")
+		) {
+			return message.reply(
+				"❌ এটা valid Google Maps link মনে হচ্ছে না।"
+			);
+		}
+
+		try {
+			// Link valid কিনা basic check
+			await axios.head(link, {
+				timeout: 10000,
+				maxRedirects: 5
+			});
+
+			return message.reply(
+				`📍 𝗦𝗛𝗔𝗥𝗘𝗗 𝗟𝗢𝗖𝗔𝗧𝗜𝗢𝗡\n` +
+				`━━━━━━━━━━━━━━━━━━\n\n` +
+				`🗺️ Google Maps:\n${link}\n\n` +
+				`🔐 Locationটি যার, তার অনুমতিতেই শেয়ার করা হয়েছে।\n` +
+				`👑 MUKUL GOAT BOT\n` +
+				`━━━━━━━━━━━━━━━━━━`
+			);
+
+		} catch (error) {
+			console.error("LOCATION ERROR:", error);
+
+			// অনেক Maps link HEAD request reject করতে পারে,
+			// তাই link-টি থাকলে সরাসরি দেখানো হবে।
+			return message.reply(
+				`📍 𝗦𝗛𝗔𝗥𝗘𝗗 𝗟𝗢𝗖𝗔𝗧𝗜𝗢𝗡\n\n` +
+				`🗺️ ${link}\n\n` +
+				`⚠️ Linkটি খুলে location দেখো।`
+			);
+		}
+	}
+};
