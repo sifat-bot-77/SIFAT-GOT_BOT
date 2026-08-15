@@ -1,456 +1,630 @@
-"use strict";
-const { execSync }     = require("child_process");
-const os               = require("os");
 const { createCanvas } = require("canvas");
-const fs               = require("fs");
-const path             = require("path");
+const fs = require("fs-extra");
+const path = require("path");
+const os = require("os");
+const si = require("systeminformation");
 
 module.exports = {
-  config: {
-    name            : "uptime2",
-    aliases         : ["upt", "botuptime"],
-    category        : "system",
-    shortDescription: "Bot uptime & system dashboard",
-    longDescription : "Shows live stats as text then sends a dashboard image.",
-    guide           : "{pn}uptime",
-    countDown       : 5,
-    role            : 0,
-    author          : "MOSTAKIM",
-  },
+	config: {
+		name: "uptime2",
+		aliases: ["system", "monitor", "sysinfo"],
+		version: "1.0",
+		author: "MUKUL",
+		countDown: 5,
+		role: 0,
+		shortDescription: "Premium system monitor",
+		longDescription: "Show bot server information in a laptop-style dashboard.",
+		category: "system",
+		guide: "{pn}"
+	},
 
-  onStart: async function ({ api, event, usersData, threadsData, commandsData }) {
-    const startTime = Date.now();
-    const threadID  = event.threadID;
+	onStart: async function ({ message }) {
+		try {
+			const [
+				cpu,
+				mem,
+				fsSize,
+				osInfo,
+				system
+			] = await Promise.all([
+				si.cpu(),
+				si.mem(),
+				si.fsSize(),
+				si.osInfo(),
+				si.system()
+			]);
 
-    let botNick = "";
-    try {
-      const botUID     = api.getCurrentUserID();
-      const threadInfo = await api.getThreadInfo(threadID);
+			// =========================
+			// SERVER INFORMATION
+			// =========================
 
-      const nickMap =
-        threadInfo?.nicknames                       ||  // path 1
-        threadInfo?.customization?.nicknames        ||  // path 2
-        threadInfo?.threadCustomization?.nicknames  ||  // path 3
-        {};
+			const totalMem = mem.total;
+			const usedMem = totalMem - mem.available;
 
-      botNick = nickMap[botUID] || "";
-    } catch {}
+			const memoryPercent =
+				(usedMem / totalMem) * 100;
 
-    if (!botNick) {
-      try {
-        const cfgPath = path.join(process.cwd(), "config.json");
-        if (fs.existsSync(cfgPath)) {
-          const raw = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
-          botNick = raw.nickName || raw.botName || raw.name || "";
-        }
-      } catch {}
-    }
+			const load =
+				os.loadavg()[0];
 
-    if (!botNick) {
-      try {
-        const cfg = global.GoatBot?.config;
-        if (cfg) botNick = cfg.nickName || cfg.botName || cfg.name || "";
-      } catch {}
-    }
+			const cpuCores =
+				os.cpus().length;
 
-    if (!botNick) {
-      try {
-        const botUID  = api.getCurrentUserID();
-        const botInfo = await api.getUserInfo(botUID);
-        botNick = botInfo?.[botUID]?.name || botInfo?.[botUID]?.firstName || "";
-      } catch {}
-    }
+			const uptime =
+				process.uptime();
 
-    if (!botNick) botNick = "𝐌𝐎𝐒𝐓𝐀𝐊𝐈𝐌 𝐆𝐎𝐀𝐓 𝐁𝐎𝐓";
+			const days =
+				Math.floor(uptime / 86400);
 
-    const s    = getSnapshot();
-    const disk = getDisk();
+			const hours =
+				Math.floor(
+					(uptime % 86400) / 3600
+				);
 
-    const uptimeSec = Math.floor(process.uptime());
-    const d  = Math.floor(uptimeSec / 86400);
-    const h  = Math.floor((uptimeSec % 86400) / 3600);
-    const m  = Math.floor((uptimeSec % 3600)  / 60);
-    const sc = uptimeSec % 60;
-    const uptimeStr = `${d}d ${h}h ${m}m ${sc}s`;
+			const minutes =
+				Math.floor(
+					(uptime % 3600) / 60
+				);
 
-    const ping = Date.now() - startTime;
+			const seconds =
+				Math.floor(uptime % 60);
 
-    let userCount = 0, groupCount = 0, cmdCount = 0, evtCount = 0;
-    try { userCount  = (await usersData.getAll()).length;  } catch {}
-    try { groupCount = (await threadsData.getAll()).length; } catch {}
-    try { cmdCount   = global.GoatBot?.commands?.size || commandsData?.size || 0; } catch {}
-    try { evtCount   = global.GoatBot?.onEvent?.size  || 0; } catch {}
+			const uptimeText =
+				`${days}d ${hours}h ${minutes}m ${seconds}s`;
 
-    const nodeVer  = process.version;
-    const platform = `${os.platform()} ${os.arch()}`.toUpperCase();
+			const disk =
+				fsSize.length
+					? fsSize[0]
+					: null;
 
-    const txt =
-`╔══════════════════════╗
-  ⚙️ - 𝐔𝐏𝐓𝐈𝐌𝐄  𝐒𝐓𝐀𝐓𝐔𝐒
-╚══════════════════════╝
-⏳ Uptime  : ${uptimeStr}
-📶 Ping    : ${ping} ms
-💾 Memory  : ${s.usedMemMB} MB
-⚡ CPU     : ${s.cpu}%
+			const diskPercent =
+				disk
+					? disk.use
+					: 0;
 
-╔══════════════════════╗
-  🤖 - 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎
-╚══════════════════════╝
-👥 Users    : ${userCount}
-💬 Groups   : ${groupCount}
-🧩 Commands : ${cmdCount}
-🔔 Events   : ${evtCount}
+			// =========================
+			// CANVAS
+			// =========================
 
-╔══════════════════════╗
-  🌐 - 𝐄𝐍𝐕𝐈𝐑𝐎𝐍𝐌𝐄𝐍𝐓
-╚══════════════════════╝
-📦 Node     : ${nodeVer}
-💻 Platform : ${platform}
-🗄️  Disk     : ${disk.str}`;
+			const width = 1536;
+			const height = 1024;
 
-    await api.sendMessage(txt, threadID);
+			const canvas =
+				createCanvas(width, height);
 
-    const imgPath = buildDashboard({
-      botNick,
-      cpu       : parseFloat(s.cpu),
-      mem       : parseFloat(s.memPct),
-      usedMemMB : s.usedMemMB,
-      totalMemGB: s.totalMemGB,
-      diskPct   : disk.pct,
-      diskStr   : disk.str,
-      uptimeStr,
-      ping,
-      userCount,
-      groupCount,
-      cmdCount,
-      evtCount,
-      nodeVer,
-      platform,
-    });
+			const ctx =
+				canvas.getContext("2d");
 
-    await api.sendMessage(
-      { attachment: fs.createReadStream(imgPath) },
-      threadID,
-      () => { try { fs.unlinkSync(imgPath); } catch {} }
-    );
-  },
+			// Background
+			const bg =
+				ctx.createLinearGradient(
+					0,
+					0,
+					width,
+					height
+				);
+
+			bg.addColorStop(
+				0,
+				"#07101d"
+			);
+
+			bg.addColorStop(
+				0.5,
+				"#101827"
+			);
+
+			bg.addColorStop(
+				1,
+				"#06111d"
+			);
+
+			ctx.fillStyle = bg;
+
+			ctx.fillRect(
+				0,
+				0,
+				width,
+				height
+			);
+
+			// =========================
+			// HELPER FUNCTIONS
+			// =========================
+
+			function roundRect(
+				x,
+				y,
+				w,
+				h,
+				r,
+				fill,
+				stroke
+			) {
+				ctx.beginPath();
+
+				ctx.roundRect(
+					x,
+					y,
+					w,
+					h,
+					r
+				);
+
+				if (fill) {
+					ctx.fillStyle = fill;
+					ctx.fill();
+				}
+
+				if (stroke) {
+					ctx.strokeStyle = stroke;
+					ctx.lineWidth = 2;
+					ctx.stroke();
+				}
+			}
+
+			function text(
+				value,
+				x,
+				y,
+				size,
+				color,
+				align = "left",
+				weight = "normal"
+			) {
+				ctx.font =
+					`${weight} ${size}px Arial`;
+
+				ctx.fillStyle = color;
+
+				ctx.textAlign = align;
+
+				ctx.fillText(
+					value,
+					x,
+					y
+				);
+			}
+
+			function gauge(
+				cx,
+				cy,
+				radius,
+				percent,
+				color,
+				label
+			) {
+				const start =
+					-Math.PI * 0.75;
+
+				const end =
+					Math.PI * 0.75;
+
+				// Outer ring
+				ctx.beginPath();
+
+				ctx.arc(
+					cx,
+					cy,
+					radius,
+					start,
+					end
+				);
+
+				ctx.strokeStyle =
+					"#1d2635";
+
+				ctx.lineWidth = 28;
+
+				ctx.stroke();
+
+				// Progress
+				ctx.beginPath();
+
+				ctx.arc(
+					cx,
+					cy,
+					radius,
+					start,
+					start +
+						(end - start) *
+							Math.min(
+								percent / 100,
+								1
+							)
+				);
+
+				ctx.strokeStyle =
+					color;
+
+				ctx.lineWidth = 28;
+
+				ctx.lineCap =
+					"round";
+
+				ctx.shadowBlur = 20;
+
+				ctx.shadowColor =
+					color;
+
+				ctx.stroke();
+
+				ctx.shadowBlur = 0;
+
+				text(
+					`${Math.round(percent)}%`,
+					cx,
+					cy + 15,
+					42,
+					"#ffffff",
+					"center",
+					"bold"
+				);
+
+				text(
+					label,
+					cx,
+					cy - radius - 35,
+					23,
+					"#dce6f2",
+					"center",
+					"bold"
+				);
+			}
+
+			// =========================
+			// HEADER
+			// =========================
+
+			roundRect(
+				50,
+				35,
+				1436,
+				95,
+				25,
+				"#101d2c",
+				"#173d57"
+			);
+
+			text(
+				"⚡ MUKUL-GOAT-BOT",
+				90,
+				92,
+				35,
+				"#00aaff",
+				"left",
+				"bold"
+			);
+
+			text(
+				"v5.1",
+				390,
+				90,
+				20,
+				"#00ff9d",
+				"left",
+				"bold"
+			);
+
+			text(
+				"● ONLINE",
+				1400,
+				90,
+				22,
+				"#00ff9d",
+				"right",
+				"bold"
+			);
+
+			// =========================
+			// TOP INFO CARDS
+			// =========================
+
+			const cardY = 155;
+			const cardW = 325;
+			const cardH = 145;
+
+			const cards = [
+				{
+					x: 55,
+					title: "HOSTNAME",
+					value:
+						os.hostname()
+							.substring(0, 20)
+				},
+				{
+					x: 405,
+					title: "OS",
+					value:
+						`${osInfo.distro || "Linux"}`
+				},
+				{
+					x: 755,
+					title: "PROCESSOR",
+					value:
+						cpu.brand
+							.substring(0, 23)
+				},
+				{
+					x: 1105,
+					title: "UPTIME",
+					value:
+						uptimeText
+				}
+			];
+
+			for (const card of cards) {
+				roundRect(
+					card.x,
+					cardY,
+					cardW,
+					cardH,
+					20,
+					"#101722",
+					"#26384c"
+				);
+
+				text(
+					card.title,
+					card.x + 25,
+					cardY + 40,
+					18,
+					"#7c8b9d",
+					"left",
+					"bold"
+				);
+
+				text(
+					card.value,
+					card.x + 25,
+					cardY + 92,
+					21,
+					"#e8f2ff",
+					"left",
+					"bold"
+				);
+			}
+
+			// =========================
+			// GAUGE PANEL
+			// =========================
+
+			roundRect(
+				55,
+				330,
+				1030,
+				450,
+				25,
+				"#0d1623",
+				"#1e3042"
+			);
+
+			gauge(
+				270,
+				555,
+				130,
+				Math.min(
+					load * 25,
+					100
+				),
+				"#ff405d",
+				"CPU"
+			);
+
+			gauge(
+				570,
+				555,
+				130,
+				memoryPercent,
+				"#ffd52e",
+				"MEMORY"
+			);
+
+			gauge(
+				870,
+				555,
+				130,
+				diskPercent,
+				"#00aaff",
+				"DISK"
+			);
+
+			// =========================
+			// SYSTEM DETAILS
+			// =========================
+
+			roundRect(
+				1110,
+				330,
+				375,
+				450,
+				25,
+				"#101722",
+				"#26384c"
+			);
+
+			text(
+				"SYSTEM DETAILS",
+				1140,
+				375,
+				22,
+				"#8d9bad",
+				"left",
+				"bold"
+			);
+
+			const details = [
+				[
+					"Node.js",
+					process.version
+				],
+				[
+					"CPU Cores",
+					`${cpuCores} Core`
+				],
+				[
+					"Load Avg",
+					load.toFixed(2)
+				],
+				[
+					"Memory",
+					`${(usedMem / 1073741824).toFixed(1)} / ${(totalMem / 1073741824).toFixed(1)} GB`
+				],
+				[
+					"Process",
+					`${process.pid}`
+				],
+				[
+					"Platform",
+					os.platform()
+				]
+			];
+
+			let detailY = 425;
+
+			for (const [key, value] of details) {
+				text(
+					key,
+					1140,
+					detailY,
+					18,
+					"#647386"
+				);
+
+				text(
+					value,
+					1455,
+					detailY,
+					18,
+					"#00c8ff",
+					"right",
+					"bold"
+				);
+
+				detailY += 48;
+			}
+
+			// =========================
+			// NETWORK BAR
+			// =========================
+
+			roundRect(
+				55,
+				810,
+				1430,
+				100,
+				22,
+				"#0e1825",
+				"#1e3042"
+			);
+
+			text(
+				"NETWORK",
+				85,
+				850,
+				18,
+				"#7b8a9b",
+				"left",
+				"bold"
+			);
+
+			text(
+				"↓ DOWNLOAD",
+				330,
+				850,
+				18,
+				"#4bffb0",
+				"left",
+				"bold"
+			);
+
+			text(
+				"0.0 KB/s",
+				610,
+				850,
+				18,
+				"#dce8f4",
+				"right"
+			);
+
+			text(
+				"↑ UPLOAD",
+				760,
+				850,
+				18,
+				"#ffe04a",
+				"left",
+				"bold"
+			);
+
+			text(
+				"0.0 KB/s",
+				1030,
+				850,
+				18,
+				"#dce8f4",
+				"right"
+			);
+
+			// =========================
+			// FOOTER
+			// =========================
+
+			text(
+				"✦ MUKUL GOAT BOT • PREMIUM SYSTEM MONITOR ✦",
+				width / 2,
+				970,
+				24,
+				"#00aaff",
+				"center",
+				"bold"
+			);
+
+			// =========================
+			// SAVE IMAGE
+			// =========================
+
+			const cacheDir =
+				path.join(
+					__dirname,
+					"cache"
+				);
+
+			await fs.ensureDir(
+				cacheDir
+			);
+
+			const filePath =
+				path.join(
+					cacheDir,
+					`uptime3_${Date.now()}.png`
+				);
+
+			await fs.writeFile(
+				filePath,
+				canvas.toBuffer("image/png")
+			);
+
+			return message.reply({
+				body:
+`👑 𝗠𝗨𝗞𝗨𝗟 𝗚𝗢𝗔𝗧 𝗕𝗢𝗧
+🟢 SYSTEM ONLINE
+⏱️ Uptime: ${uptimeText}`,
+				attachment:
+					fs.createReadStream(
+						filePath
+					)
+			});
+
+		} catch (error) {
+			console.error(
+				"UPTIME3 ERROR:",
+				error
+			);
+
+			return message.reply(
+				"❌ System monitor তৈরি করতে সমস্যা হয়েছে।"
+			);
+		}
+	}
 };
-
-
-function getSnapshot() {
-  const total = os.totalmem();
-  const free  = os.freemem();
-  const used  = total - free;
-  const cpu   = Math.min(99, ((os.loadavg()[0] / os.cpus().length) * 100)).toFixed(1);
-  return {
-    cpu,
-    memPct    : ((used / total) * 100).toFixed(1),
-    usedMemMB : (used  / 1024 / 1024).toFixed(0),
-    totalMemGB: (total / 1024 / 1024 / 1024).toFixed(1),
-  };
-}
-
-function getDisk() {
-  try {
-    const out   = execSync("df / | tail -1").toString().trim().split(/\s+/);
-    const used  = parseInt(out[2]);
-    const total = parseInt(out[1]);
-    const pct   = Math.round((used / total) * 100);
-    const toGB  = v => (v / 1024 / 1024).toFixed(1);
-    return { str: `${toGB(used)}GB / ${toGB(total)}GB (${pct}%)`, pct };
-  } catch {
-    return { str: "N/A", pct: 0 };
-  }
-}
-
-function buildDashboard(info) {
-  const W = 820, H = 450;
-  const canvas = createCanvas(W, H);
-  const ctx    = canvas.getContext("2d");
-
-  const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0,   "#03071a");
-  bg.addColorStop(0.5, "#050c1e");
-  bg.addColorStop(1,   "#060b19");
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-
-  // radial glow center
-  const rg = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, 420);
-  rg.addColorStop(0, "rgba(0,255,180,0.05)");
-  rg.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
-
-  // grid dots
-  ctx.fillStyle = "rgba(0,180,255,0.035)";
-  for (let gx = 20; gx < W; gx += 28)
-    for (let gy = 20; gy < H; gy += 28) {
-      ctx.beginPath(); ctx.arc(gx, gy, 1, 0, Math.PI*2); ctx.fill();
-    }
-
-
-  for (let y = 0; y < H; y += 4) {
-    ctx.fillStyle = "rgba(0,0,0,0.055)";
-    ctx.fillRect(0, y, W, 2);
-  }
-
-  const tbg = ctx.createLinearGradient(0, 0, W, 0);
-  tbg.addColorStop(0, "rgba(0,255,180,0.13)");
-  tbg.addColorStop(1, "rgba(0,60,200,0.06)");
-  ctx.fillStyle = tbg; ctx.fillRect(0, 0, W, 52);
-  ctx.strokeStyle = "rgba(0,255,180,0.20)";
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0,52); ctx.lineTo(W,52); ctx.stroke();
-
-  // traffic dots
-  ["#ff5f57","#febc2e","#28c840"].forEach((c, i) => {
-    ctx.beginPath(); ctx.arc(22+i*22, 26, 7, 0, Math.PI*2);
-    ctx.fillStyle = c; ctx.shadowColor = c; ctx.shadowBlur = 12;
-    ctx.fill(); ctx.shadowBlur = 0;
-  });
-
- 
-  const displayName = "🤖 " + info.botNick;
-  ctx.font = "bold 18px monospace"; ctx.fillStyle = "#ffffff";
-  ctx.fillText(displayName, 82, 33);
-
-
-  const nw = ctx.measureText(displayName).width;
-  ctx.fillStyle = "rgba(0,255,170,0.18)";
-  roundRect(ctx, 86+nw, 13, 52, 22, 7); ctx.fill();
-  ctx.font = "bold 11px monospace"; ctx.fillStyle = "#00ffaa";
-  ctx.fillText("v2", 94+nw, 28);
-
-
-  ctx.fillStyle = "rgba(0,255,100,0.12)";
-  roundRect(ctx, W-150, 14, 98, 24, 12); ctx.fill();
-  ctx.strokeStyle = "rgba(0,255,100,0.30)";
-  ctx.lineWidth = 1; roundRect(ctx, W-150, 14, 98, 24, 12); ctx.stroke();
-  ctx.beginPath(); ctx.arc(W-137, 26, 5, 0, Math.PI*2);
-  ctx.fillStyle = "#00ff66"; ctx.shadowColor = "#00ff66"; ctx.shadowBlur = 14;
-  ctx.fill(); ctx.shadowBlur = 0;
-  ctx.font = "bold 11px monospace"; ctx.fillStyle = "#00ff66";
-  ctx.fillText("ONLINE", W-129, 31);
-
-
-  ctx.font = "12px monospace"; ctx.fillStyle = "#445566";
-  ctx.fillText(new Date().toTimeString().slice(0,8), W-46, 31);
-
-
-  const cards = [
-    {
-      label : "CPU USAGE",
-      val   : `${info.cpu}%`,
-      sub   : `${os.cpus().length} Cores`,
-      color : "#00ffaa",
-      glow  : "#00ffaa",
-    },
-    {
-      label : "MEMORY",
-      val   : `${(info.usedMemMB/1024).toFixed(1)}GB`,
-      sub   : `${(info.usedMemMB/1024).toFixed(1)} / ${info.totalMemGB} GB`,
-      color : "#cc66ff",
-      glow  : "#cc66ff",
-    },
-    {
-      label : "DISK USAGE",
-      val   : `${info.diskPct}%`,
-      sub   : "System Drive",
-      color : "#ff4466",
-      glow  : "#ff4466",
-      hi    : true,
-    },
-    {
-      label : "UPTIME",
-      val   : info.uptimeStr.split(" ").slice(0,2).join(" "),
-      sub   : info.uptimeStr,
-      color : "#ffffff",
-      glow  : "#4499ff",
-    },
-  ];
-
-  cards.forEach((c, i) => {
-    const x=14+i*199, y=62, cw=189, ch=78;
-    ctx.fillStyle = c.hi
-      ? "rgba(255,40,70,0.10)"
-      : "rgba(255,255,255,0.035)";
-    roundRect(ctx, x, y, cw, ch, 11); ctx.fill();
-    ctx.strokeStyle = c.hi
-      ? "rgba(255,60,80,0.45)"
-      : "rgba(255,255,255,0.07)";
-    ctx.lineWidth = 1; roundRect(ctx, x, y, cw, ch, 11); ctx.stroke();
-
-    // top accent line
-    ctx.strokeStyle = c.glow + "55"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x+11,y); ctx.lineTo(x+55,y); ctx.stroke();
-
-    // glow dot
-    ctx.beginPath(); ctx.arc(x+15, y+16, 5, 0, Math.PI*2);
-    ctx.fillStyle = c.glow; ctx.shadowColor = c.glow; ctx.shadowBlur = 14;
-    ctx.fill(); ctx.shadowBlur = 0;
-
-    ctx.font = "9px monospace"; ctx.fillStyle = "#7788aa";
-    ctx.fillText(c.label, x+26, y+20);
-
-    ctx.font = "bold 26px monospace"; ctx.fillStyle = c.color;
-    ctx.shadowColor = c.glow; ctx.shadowBlur = 14;
-    ctx.fillText(c.val, x+10, y+54); ctx.shadowBlur = 0;
-
-    ctx.font = "9px monospace"; ctx.fillStyle = "#556677";
-    ctx.fillText(c.sub, x+10, y+70);
-  });
-
-  [
-    { label:"CPU",    val:info.cpu,     color:"#00ffaa", x:95,  cy:205 },
-    { label:"MEMORY", val:info.mem,     color:"#cc66ff", x:245, cy:205 },
-    { label:"DISK",   val:info.diskPct, color:"#ff4466", x:390, cy:205 },
-  ].forEach(g => drawDonut(ctx, g.x, g.cy, 50, 34, g.val/100, g.color, g.label, `${g.val}%`));
-
-  const pX=450, pY=155, pW=356, pH=135;
-  ctx.fillStyle = "rgba(255,255,255,0.025)";
-  roundRect(ctx, pX, pY, pW, pH, 10); ctx.fill();
-  ctx.strokeStyle = "rgba(0,255,180,0.08)";
-  ctx.lineWidth = 1; roundRect(ctx, pX, pY, pW, pH, 10); ctx.stroke();
-
-  ctx.font = "bold 10px monospace"; ctx.fillStyle = "#00ffaa";
-  ctx.fillText("◈ SYSTEM INFO", pX+12, pY+18);
-
-  const rows = [
-    ["NODE.JS",  info.nodeVer],
-    ["PLATFORM", info.platform],
-    ["HOSTNAME", os.hostname().slice(0,20)],
-    ["USERS",    ""+info.userCount],
-    ["GROUPS",   ""+info.groupCount],
-    ["PID",      ""+process.pid],
-  ];
-  rows.forEach(([k,v], i) => {
-    const ry = pY+34+i*17;
-    ctx.font = "9px monospace"; ctx.fillStyle = "#445566";
-    ctx.fillText(k, pX+12, ry);
-    ctx.fillStyle = "#00aaff";
-    ctx.fillText(v, pX+pW-14-ctx.measureText(v).width, ry);
-    if (i < rows.length-1) {
-      ctx.fillStyle = "rgba(255,255,255,0.04)";
-      ctx.fillRect(pX+12, ry+3, pW-24, 1);
-    }
-  });
-
-  const mY=305, mH=110;
-  ctx.fillStyle = "rgba(255,255,255,0.02)";
-  roundRect(ctx, 14, mY, W-28, mH, 10); ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.05)";
-  ctx.lineWidth = 1; roundRect(ctx, 14, mY, W-28, mH, 10); ctx.stroke();
-
-  ctx.font = "bold 10px monospace"; ctx.fillStyle = "#8899bb";
-  ctx.fillText("▶ LIVE RESOURCE MONITOR", 28, mY+18);
-
-  [
-    ["#00ffaa", `CPU ${info.cpu}%`],
-    ["#cc66ff", `MEM ${info.mem}%`],
-    ["#ff4466", `DISK ${info.diskPct}%`],
-  ].forEach(([c,l], i) => {
-    const lx = W-265+i*90;
-    ctx.beginPath(); ctx.arc(lx, mY+13, 4, 0, Math.PI*2);
-    ctx.fillStyle = c; ctx.shadowColor = c; ctx.shadowBlur = 7;
-    ctx.fill(); ctx.shadowBlur = 0;
-    ctx.font = "9px monospace"; ctx.fillStyle = c;
-    ctx.fillText(l, lx+8, mY+17);
-  });
-
-  const wY = mY+28, wH = mH-42;
-  drawStaticWave(ctx, 28, wY, W-56, wH, info.cpu/100,     "#00ffaa", 0);
-  drawStaticWave(ctx, 28, wY, W-56, wH, info.mem/100,     "#cc66ff", 1.5);
-  drawStaticWave(ctx, 28, wY, W-56, wH, info.diskPct/100, "#ff4466", 3.0);
-
-  const fg = ctx.createLinearGradient(0, H-30, W, H);
-  fg.addColorStop(0, "rgba(0,255,170,0.09)");
-  fg.addColorStop(1, "rgba(0,60,180,0.05)");
-  ctx.fillStyle = fg; ctx.fillRect(0, H-30, W, 30);
-  ctx.strokeStyle = "rgba(0,255,180,0.12)"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0,H-30); ctx.lineTo(W,H-30); ctx.stroke();
-
-  ctx.font = "11px monospace";
-  ctx.fillStyle = "#00ffaa"; ctx.shadowColor = "#00ffaa"; ctx.shadowBlur = 8;
-  ctx.fillText("● READY", 16, H-10); ctx.shadowBlur = 0;
-
-  ctx.fillStyle = "#334455";
-  ctx.fillText(`LINUX • NODE ${info.nodeVer} • PID ${process.pid}`, 90, H-10);
-
-  const footLabel = `${info.botNick} © ${new Date().getFullYear()}`;
-  ctx.fillStyle = "#2a3a4a";
-  ctx.fillText(footLabel, W-16-ctx.measureText(footLabel).width, H-10);
-
-  const outPath = path.join(process.cwd(), `dash_${Date.now()}.png`);
-  fs.writeFileSync(outPath, canvas.toBuffer("image/png"));
-  return outPath;
-}
-
-function drawDonut(ctx, cx, cy, outer, inner, pct, color, label, text) {
-  // track ring
-  ctx.beginPath();
-  ctx.arc(cx, cy, outer, 0, Math.PI*2);
-  ctx.arc(cx, cy, inner, Math.PI*2, 0, true);
-  ctx.fillStyle = "rgba(255,255,255,0.05)"; ctx.fill();
-
-
-  ctx.beginPath(); ctx.arc(cx, cy, outer+3, 0, Math.PI*2);
-  ctx.strokeStyle = color + "55"; ctx.lineWidth = 2;
-  ctx.shadowColor = color; ctx.shadowBlur = 12; ctx.stroke(); ctx.shadowBlur = 0;
-
-
-  const start = -Math.PI / 2;
-  const end   = start + pct * Math.PI * 2;
-  ctx.beginPath();
-  ctx.arc(cx, cy, outer, start, end);
-  ctx.arc(cx, cy, inner, end, start, true);
-  ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 22;
-  ctx.fill(); ctx.shadowBlur = 0;
-
-  ctx.font = "bold 14px monospace"; ctx.fillStyle = color;
-  ctx.textAlign = "center"; ctx.shadowColor = color; ctx.shadowBlur = 10;
-  ctx.fillText(text, cx, cy+5); ctx.shadowBlur = 0;
-
-  ctx.font = "9px monospace"; ctx.fillStyle = "#8899bb";
-  ctx.fillText(label, cx, cy+outer+15);
-  ctx.textAlign = "left";
-}
-
-function drawStaticWave(ctx, x, y, w, h, amplitude, color, phase) {
-  const pts = 120;
-
-  ctx.beginPath(); ctx.moveTo(x, y+h);
-  for (let i = 0; i <= pts; i++) {
-    const px   = x + (i/pts)*w;
-    const wave = Math.sin(i*0.15 + phase)*(h*amplitude*0.35)
-               + Math.sin(i*0.07 + phase*1.7)*(h*amplitude*0.15);
-    const py   = y + h - h*amplitude*0.5 - wave;
-    i === 0 ? ctx.lineTo(px,py) : ctx.lineTo(px,py);
-  }
-  ctx.lineTo(x+w, y+h); ctx.closePath();
-  ctx.fillStyle = color + "20"; ctx.fill();
-
-  // stroke line
-  ctx.beginPath();
-  for (let i = 0; i <= pts; i++) {
-    const px   = x + (i/pts)*w;
-    const wave = Math.sin(i*0.15 + phase)*(h*amplitude*0.35)
-               + Math.sin(i*0.07 + phase*1.7)*(h*amplitude*0.15);
-    const py   = y + h - h*amplitude*0.5 - wave;
-    i === 0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
-  }
-  ctx.strokeStyle = color; ctx.lineWidth = 1.8;
-  ctx.shadowColor = color; ctx.shadowBlur = 8; ctx.stroke(); ctx.shadowBlur = 0;
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
-  ctx.quadraticCurveTo(x+w,y, x+w,y+r);
-  ctx.lineTo(x+w,y+h-r);
-  ctx.quadraticCurveTo(x+w,y+h, x+w-r,y+h);
-  ctx.lineTo(x+r,y+h);
-  ctx.quadraticCurveTo(x,y+h, x,y+h-r);
-  ctx.lineTo(x,y+r);
-  ctx.quadraticCurveTo(x,y, x+r,y);
-  ctx.closePath();
-}
