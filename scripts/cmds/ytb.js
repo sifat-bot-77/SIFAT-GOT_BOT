@@ -1,101 +1,168 @@
-const axios = require("axios");
-const fs = require("fs-extra");
-const path = require("path");
+axios = require("axios");
+const fs = require("fs");
+
+async function downloadFile(url, fileName) {
+  const response = await axios({
+    url,
+    method: "GET",
+    responseType: "arraybuffer",
+    timeout: 120000
+  });
+  fs.writeFileSync(fileName, Buffer.from(response.data));
+  return fs.createReadStream(fileName);
+}
+
+async function getThumbnailStream(url) {
+  const response = await axios.get(url, {
+    responseType: "stream",
+    timeout: 15000
+  });
+  return response.data;
+}
 
 module.exports = {
   config: {
     name: "ytb",
-    version: "1.1",
-    author: "Neoaz 🐊",
-    countDown: 5,
+    version: "3.2",
+    author: "Arafat",
     role: 0,
-    shortDescription: { en: "YouTube downloader" },
-    category: "media",
-    guide: { en: "{pn} -a <query> or {pn} -v <query>" }
+    description: { en: "🎬 YTB Audio/Video Downloader" },
+    category: "media"
   },
 
-  onStart: async function ({ message, args, event, api, commandName }) {
-    const type = args[0];
-    const query = args.slice(1).join(" ");
+  onStart: async ({ api, args, event, commandName }) => {
 
-    if (!["-a", "-v"].includes(type) || !query) {
-      return message.reply(`Usage: ${this.config.name} -a <query> or -v <query>`);
-    }
+    if (!args.length)
+      return api.sendMessage(
+        "Usage:\n#ytb -v name\n#ytb -a name\n#ytb -v -l name\n#ytb -a -l name",
+        event.threadID,
+        event.messageID
+      );
 
-    try {
-      const res = await axios.get(`https://neokex-dlapis.vercel.app/api/search?q=${encodeURIComponent(query)}`);
-      const results = res.data.results.slice(0, 6);
+    const isVideo = args.includes("-v");
+    const isAudio = args.includes("-a");
+    const isList = args.includes("-l");
 
-      if (results.length === 0) return message.reply("No results found.");
+    if (!isVideo && !isAudio)
+      return api.sendMessage("❌ Use -v (video) or -a (audio)", event.threadID, event.messageID);
 
-      let msg = "";
-      const attachments = [];
-      const cacheDir = path.join(__dirname, "cache");
-      await fs.ensureDir(cacheDir);
-
-      for (let i = 0; i < results.length; i++) {
-        msg += `${i + 1}. ${results[i].title}\n[${results[i].duration}]\n\n`;
-        const imgPath = path.join(cacheDir, `yt_${Date.now()}_${i}.jpg`);
-        const imgRes = await axios.get(results[i].thumbnail, { responseType: "arraybuffer" });
-        await fs.writeFile(imgPath, Buffer.from(imgRes.data));
-        attachments.push(fs.createReadStream(imgPath));
-      }
-
-      message.reply({ body: msg.trim(), attachment: attachments }, (err, info) => {
-        global.GoatBot.onReply.set(info.messageID, {
-          commandName,
-          author: event.senderID,
-          results,
-          downloadType: type === "-a" ? "audio" : "video"
-        });
-        attachments.forEach(s => setTimeout(() => fs.remove(s.path).catch(() => {}), 10000));
-      });
-    } catch (e) {
-      message.reply("Search error.");
-    }
-  },
-
-  onReply: async function ({ message, event, Reply, api }) {
-    const choice = parseInt(event.body);
-    if (isNaN(choice) || choice < 1 || choice > Reply.results.length) return;
-
-    const selected = Reply.results[choice - 1];
-    api.unsendMessage(event.messageReply.messageID);
-    api.setMessageReaction("⏳", event.messageID);
+    const keyword = args.filter(a => !a.startsWith("-")).join(" ");
+    if (!keyword)
+      return api.sendMessage("Please type a name.", event.threadID, event.messageID);
 
     try {
-      const dlRes = await axios.get(`https://neokex-dlapis.vercel.app/api/alldl?url=${encodeURIComponent(selected.url)}`);
-      const pollUrl = dlRes.data[Reply.downloadType].downloadUrl;
 
-      let streamUrl = null;
-      for (let i = 0; i < 60; i++) { // Max 60 seconds
-        const statusRes = await axios.get(pollUrl);
-        if (statusRes.data.status === "completed") {
-          streamUrl = statusRes.data.viewUrl;
-          break;
+      const apiJson = await axios.get(
+        "https://raw.githubusercontent.com/Arafat-Core/cmds/refs/heads/main/api.json"
+      );
+
+      const DOWNLOAD_BASE = apiJson.data.download;
+
+      const searchRes = await axios.get(
+        `https://yt-search-ochre.vercel.app/api/search?q=${encodeURIComponent(keyword)}&limit=6`
+      );
+
+      if (!searchRes.data.success || !searchRes.data.results.length)
+        return api.sendMessage("❌ No results found.", event.threadID, event.messageID);
+
+      const results = searchRes.data.results.slice(0, 6).map(v => ({
+        id: v.videoId,
+        title: v.title,
+        url: v.url,
+        timestamp: v.duration,
+        author: { name: v.author },
+        thumbnail: v.thumbnail
+      }));
+
+      if (isList) {
+
+        let text = "╭───────────────❍\n";
+        text += isVideo ? "│   🎬 𝑽𝒊𝒅𝒆𝒐 𝑳𝒊𝒔𝒕\n" : "│   🎵 𝑨𝒖𝒅𝒊𝒐 𝑳𝒊𝒔𝒕\n";
+        text += "╰───────────────❍\n\n";
+
+        for (let i = 0; i < results.length; i++) {
+          const v = results[i];
+          text += `╭─❍\n`;
+          text += `┊  ${i + 1}. ${v.title}\n`;
+          text += `┊  ⏳ ${v.timestamp}\n`;
+          text += `┊  📺 ${v.author.name}\n`;
+          text += `╰───────────────❍\n\n`;
         }
-        await new Promise(r => setTimeout(r, 1000)); // ১ সেকেন্ড পর পর চেক
+
+        text += "╭───────────────❍\n";
+        text += "│   🔢 Reply with number (1–6)\n";
+        text += "╰───────────────❍";
+
+        const thumbs = await Promise.all(
+          results.map(v => getThumbnailStream(v.thumbnail))
+        );
+
+        return api.sendMessage(
+          { body: text, attachment: thumbs },
+          event.threadID,
+          (err, info) => {
+            global.GoatBot.onReply.set(info.messageID, {
+              commandName,
+              messageID: info.messageID,
+              author: event.senderID,
+              results,
+              isVideo,
+              DOWNLOAD_BASE
+            });
+          },
+          event.messageID
+        );
       }
 
-      if (!streamUrl) throw new Error("Processing timeout.");
+      const video = results[0];
+      const shortUrl = `https://youtu.be/${video.id}`;
 
-      const cacheDir = path.join(__dirname, "cache");
-      const ext = Reply.downloadType === "audio" ? "mp3" : "mp4";
-      const filePath = path.join(cacheDir, `${Date.now()}.${ext}`);
-      
-      const fileRes = await axios.get(streamUrl, { responseType: "arraybuffer" });
-      await fs.writeFile(filePath, Buffer.from(fileRes.data));
+      const Arafaturl = isVideo
+        ? `${DOWNLOAD_BASE}/arafatdl?url=${encodeURIComponent(shortUrl)}`
+        : `${DOWNLOAD_BASE}/arafatadl?url=${encodeURIComponent(shortUrl)}`;
 
-      await message.reply({
-        body: selected.title,
-        attachment: fs.createReadStream(filePath)
-      });
+      const fileName = isVideo ? "video.mp4" : "audio.mp3";
 
-      api.setMessageReaction("✅", event.messageID);
-      fs.remove(filePath).catch(() => {});
-    } catch (e) {
-      api.setMessageReaction("❌", event.messageID);
-      message.reply("Download error.");
+      api.setMessageReaction("🌷", event.messageID, () => {}, true);
+
+      await downloadFile(Arafaturl, fileName);
+
+      api.sendMessage(
+        {
+          body:
+`╭───────────────❍
+│ ${isVideo ? "🎬" : "🎧"} 𝑫𝒐𝒘𝒏𝒍𝒐𝒂𝒅 𝑺𝒖𝒄𝒄𝒆𝒔𝒔
+├───────────────❍
+│ ${isVideo ? "🎥" : "🎵"} ${video.title}
+╰───────────────❍`,
+          attachment: fs.createReadStream(fileName)
+        },
+        event.threadID,
+        () => {
+          fs.unlinkSync(fileName);
+          api.setMessageReaction("🎀", event.messageID, () => {}, true);
+        },
+        event.messageID
+      );
+
+    } catch (err) {
+      console.log("YTB ERROR:", err.message);
+      api.sendMessage("❌ Failed to fetch media.", event.threadID, event.messageID);
     }
-  }
-};
+  },
+
+  onReply: async ({ event, api, Reply }) => {
+    try {
+      const { results, author, isVideo, DOWNLOAD_BASE } = Reply;
+      if (event.senderID !== author) return;
+
+      const choice = parseInt(event.body);
+      if (isNaN(choice) || choice < 1 || choice > results.length)
+        return api.sendMessage("❌ Enter valid number (1–6).", event.threadID, event.messageID);
+
+      const video = results[choice - 1];
+      const shortUrl = `https://youtu.be/${video.id}`;
+
+      const Arafaturl = isVideo
+        ? `${DOWNLOAD_BASE}/arafatdl?url=${encodeURIComponent(shortUrl)}`
+        : `${DOWNLOAD_BASE}/arafatadl?url=${encodeURIC
