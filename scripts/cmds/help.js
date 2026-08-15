@@ -5,28 +5,21 @@ module.exports = {
 	config: {
 		name: "help",
 		aliases: ["menu", "commands"],
-		version: "4.8",
-		author: "NeoKEX",
-		shortDescription: "Show all available commands",
-		longDescription: "Displays a clean and premium-styled categorized list of commands.",
+		version: "5.0",
+		author: "MUKUL",
+		shortDescription: "Show all commands",
+		longDescription: "Display categorized commands",
 		category: "system",
-		guide: "{pn}help [command name]"
+		guide: "{pn}help [command]"
 	},
 
 	onStart: async function ({ message, args, prefix }) {
 		const allCommands = global.GoatBot.commands;
 		const categories = {};
 
-		const emojiMap = {
-			ai: "➥", "ai-image": "➥", group: "➥", system: "➥",
-			fun: "➥", owner: "➥", config: "➥", economy: "➥",
-			media: "➥", "18+": "➥", tools: "➥", utility: "➥",
-			info: "➥", image: "➥", game: "➥", admin: "➥",
-			rank: "➥", boxchat: "➥", others: "➥"
-		};
-
 		const cleanCategoryName = (text) => {
 			if (!text) return "others";
+
 			return text
 				.normalize("NFKD")
 				.replace(/[^\w\s-]/g, "")
@@ -35,19 +28,23 @@ module.exports = {
 				.toLowerCase();
 		};
 
-		for (const [name, cmd] of allCommands) {
-			const cat = cleanCategoryName(cmd.config.category);
-			if (!categories[cat]) categories[cat] = [];
-			categories[cat].push(cmd.config.name);
-		}
-
-
+		// Command Details
 		if (args[0]) {
 			const query = args[0].toLowerCase();
+
 			const cmd =
 				allCommands.get(query) ||
-				[...allCommands.values()].find((c) => (c.config.aliases || []).includes(query));
-			if (!cmd) return message.reply(`❌ Command "${query}" not found.`);
+				[...allCommands.values()].find(
+					(c) =>
+						(c.config.aliases || [])
+							.map((a) => a.toLowerCase())
+							.includes(query)
+				);
+
+			if (!cmd)
+				return message.reply(
+					`❌ Command "${query}" not found`
+				);
 
 			const {
 				name,
@@ -57,47 +54,84 @@ module.exports = {
 				category,
 				shortDescription,
 				longDescription,
-				aliases,
-				role 
+				aliases
 			} = cmd.config;
 
 			const desc =
 				typeof longDescription === "string"
 					? longDescription
-					: longDescription?.en || shortDescription?.en || shortDescription || "No description";
+					: longDescription?.en ||
+					  shortDescription?.en ||
+					  shortDescription ||
+					  "No description";
 
 			const usage =
 				typeof guide === "string"
 					? guide.replace(/{pn}/g, prefix)
-					: guide?.en?.replace(/{pn}/g, prefix) || `${prefix}${name}`;
+					: guide?.en?.replace(/{pn}/g, prefix) ||
+					  `${prefix}${name}`;
 
-						const requiredRole = cmd.config.role !== undefined ? cmd.config.role : 0; 
+			const requiredRole =
+				cmd.config.role !== undefined
+					? cmd.config.role
+					: 0;
 
 			return message.reply(
-				`☠️ 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢 ☠️\n\n` +
-				`➥ Name: ${name}\n` +
-				`➥ Category: ${category || "Uncategorized"}\n` +
-				`➥ Description: ${desc}\n` +
-				`➥ Aliases: ${aliases?.length ? aliases.join(", ") : "None"}\n` +
-				`➥ Usage: ${usage}\n` +
-				`➥ Permission: ${requiredRole}\n` + 
-				`➥ Author: ${author}\n` +
-				`➥ Version: ${version}`
+`👑 𝗠𝗨𝗞𝗨𝗟 𝗚𝗢𝗔𝗧 𝗕𝗢𝗧 👑
+
+☠️ COMMAND INFO ☠️
+
+➥ Name: ${name}
+➥ Category: ${category || "Others"}
+➥ Description: ${desc}
+➥ Aliases: ${aliases?.join(", ") || "None"}
+➥ Usage: ${usage}
+➥ Permission: ${requiredRole}
+➥ Author: ${author || "MUKUL"}
+➥ Version: ${version || "1.0"}`
 			);
 		}
 
-		const formatCommands = (cmds) =>
-			cmds.sort().map((cmd) => `× ${cmd}`);
+		// Category Sort
+		for (const [name, cmd] of allCommands) {
+			const cat = cleanCategoryName(
+				cmd.config.category
+			);
 
-		let msg = `━━━☠️ 𝐌𝐎𝐒𝐓𝐀𝐊𝐈𝐌 𝐆𝐎𝐀𝐓 𝐁𝐎𝐓 ☠️━━━\n`;
-		const sortedCategories = Object.keys(categories).sort();
-		for (const cat of sortedCategories) {
-			const emoji = emojiMap[cat] || "➥";
-			msg += `\n╭──『 ${cat.toUpperCase()} 』\n`; 
-			msg += `${formatCommands(categories[cat]).join(' ')}\n`; 
-			msg += `╰────────────◊\n`;
+			if (!categories[cat])
+				categories[cat] = [];
+
+			categories[cat].push(
+				cmd.config.name
+			);
 		}
-		msg += `\n➥ Use: ${prefix}help [command name] for details\n➥Use: ${prefix}callad to talk with bot admins '_'`;
+
+		const sortedCategories =
+			Object.keys(categories).sort();
+
+		let msg =
+`👑 𝗠𝗨𝗞𝗨𝗟 𝗚𝗢𝗔𝗧 𝗕𝗢𝗧 👑
+
+`;
+
+		for (const cat of sortedCategories) {
+			msg += `『 ${cat.toUpperCase()} 』\n`;
+
+			const cmds = categories[cat]
+				.sort()
+				.map((cmd) => `* ${cmd}`)
+				.join("\n");
+
+			msg += `${cmds}\n\n`;
+		}
+
+		msg +=
+`━━━━━━━━━━━━━━━━━━
+📌 Total Commands: ${allCommands.size}
+
+➥ ${prefix}help [command]
+➥ MUKUL GOAT BOT
+━━━━━━━━━━━━━━━━━━`;
 
 		return message.reply(msg);
 	}
