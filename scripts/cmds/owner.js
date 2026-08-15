@@ -41,8 +41,9 @@ module.exports = {
 `👤 𝐎𝐰𝐧𝐞𝐫 𝐈𝐧𝐟𝐨 !
 ━━━━━━━━━━━━━━━
 Name: ${ownerName}
-Username: @MD.MOSTAKIM.ISLAM.SAGOR
-Location: Dhaka , Bangladesh
+Username: @MD.MUKUL MIA
+Location: Rangpur , Bangladesh
+Facebook: sk mukul boss 
 
 📞 Contact
 Messenger: https://m.me/${ownerUID}
