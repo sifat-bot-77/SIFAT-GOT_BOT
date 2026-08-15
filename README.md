@@ -1,8 +1,9 @@
 <p align="center">
-  <img src="https://i.imgur.com/w6ZA3hR.jpeg" https="400">
+  <img src="https://i.imgur.com/BQeIeaq.jpeg" https="400">
 </p>
+  
 
-👑 🅧🅜🅤🅚🅤🅛🅑🅞🅣 👑
+👑 SIFAT GOT_BOT 👑
 
 ## Steps to Run the Bot
 
