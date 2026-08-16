@@ -59,9 +59,9 @@ node index.js
 
 ## 👨‍💻 ABOUT THE DEVELOPER
 
-**Name:** `MD MUKUL MIA`  
+**Name:** `SIFAT_Bby`  
 **Profession:** `STUDENT & CHATBOT DEVELOPER`  
-**Location:** `DHAKA, BANGLADESH`
+**Location:** `Sakhipur, Tangail`
 
 ## 📝 **Note**
 - This is a messenger chat bot using a personal account, using an [unofficial api](https://github.com/ntkhang03/fb-chat-api/blob/master/DOCS.md) ([Origin here](https://github.com/Schmavery/facebook-chat-api)) and this may lead to facebook account being locked due to spam or other reasons. 
@@ -172,6 +172,6 @@ node index.js
 - Don't remove/edit my credits (author name) in my source code
 
 💖 **Thank You For Choosing • 
-👑 🅢🅚 🅜🅤🅚🅤🅛  𝐆𝐎𝐀𝐓 𝐁𝐎𝐓 𝐕𝟐👑!**  
+👑 SIFAT  𝐆𝐎𝐀𝐓 𝐁𝐎𝐓 𝐕𝟐👑!**  
 🗓️ *Release Date:* `05/01/2026 at 12:00`  
 ⭐ **Please don't forget to give a star after forking! It really helps!**
