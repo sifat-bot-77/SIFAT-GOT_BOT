@@ -6,7 +6,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>MUKUL GOAT BOT</title>
+  <title>SIFAT GOAT BOT</title>
 </head>
 
 <body>
