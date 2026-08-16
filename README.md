@@ -1,8 +1,34 @@
 <p align="center">
   <img src="https://i.imgur.com/BQeIeaq.jpeg" https="400">
 </p>
-  
 
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>MUKUL GOAT BOT</title>
+</head>
+
+<body>
+
+  <p align="center">
+    <video
+      width="400"
+      autoplay
+      muted
+      loop
+      playsinline
+      controls>
+      <source
+        src="https://i.imgur.com/tdxWoBB.mp4"
+        type="video/mp4">
+      Your browser does not support video.
+    </video>
+  </p>
+
+</body>
+</html>
+  
 👑 SIFAT GOT_BOT 👑
 
 ## Steps to Run the Bot
